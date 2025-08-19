@@ -1,5 +1,6 @@
 import { kaboomCtx } from "./kaboomCtx";
 import { scaleFactor } from "./constants";
+import { displayDialogue } from "./utils";
 
 kaboomCtx.loadSprite("spritesheet", "./spritesheet.png",{  
     sliceX: 39,
@@ -22,7 +23,7 @@ kaboomCtx.setBackground(kaboomCtx.Color.fromHex("#311047"));
 kaboomCtx.scene("main", async () => {
     const mapData = await (await fetch("./map.json")).json();
     const layers = mapData.layers;
-    const map = kaboomCtx.make([
+    const map = kaboomCtx.add([
         kaboomCtx.sprite("map"),
         kaboomCtx.pos(0),
         kaboomCtx.scale(scaleFactor),
@@ -62,12 +63,34 @@ kaboomCtx.scene("main", async () => {
                 if (boundary.name) {
                     player.onCollide(boundary.name, () => {
                         player.isInDialogue = true;
-                        
+                        displayDialogue("Hello, world!", () => {
+                            // Dialogue end callback
+                            player.isInDialogue = false;
+                        });
                     });
+                }
+            }
+            continue
+        }
+
+        if (layer.name === "spawnpoints") {
+            for (const entity of layer.objects) {
+                if (entity.name === "player") {
+                    player.pos = kaboomCtx.vec2(
+                        (map.pos.x + entity.x) * scaleFactor,
+                        (map.pos.y + entity.y) * scaleFactor,
+                    );
+                    kaboomCtx.add(player);
+                    continue;
                 }
             }
         }
     }
+
+    kaboomCtx.onUpdate(() => {
+        kaboomCtx.camPos(player.pos.x, player.pos.y + 100);
+
+    });
 });
 
 kaboomCtx.go("main");
